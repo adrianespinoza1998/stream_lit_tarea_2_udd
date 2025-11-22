@@ -14,8 +14,9 @@ st.set_page_config(
 )
 
 BASE_DIR = os.path.dirname(__file__)
-SHP_PATH = os.path.join(BASE_DIR, '50m_cultural', 'ne_50m_admin_0_countries.shp')
-CSV_PATH = os.path.join(BASE_DIR, 'emissions_per_country', 'annual-co2-emissions-per-country.csv')
+SHP_PATH = os.path.join(BASE_DIR, 'data', 'raw', '50m_cultural', 'ne_50m_admin_0_countries.shp')
+CSV_PATH = os.path.join(BASE_DIR, 'data', 'raw', 'emissions_per_country', 'annual-co2-emissions-per-country.csv')
+
 
 
 # ============================
