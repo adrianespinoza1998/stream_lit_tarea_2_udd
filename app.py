@@ -276,6 +276,22 @@ def main():
             help='Selecciona hasta qué año se acumulan las emisiones'
         )
     
+    elif selected_tab == 'Evolución por región':
+        # calcular años disponibles para los controles
+        years_regions = sorted(df_co2['year'].unique())
+        
+        st.sidebar.markdown('---')
+        st.sidebar.header('Controles de rango temporal')
+        
+        year_range = st.sidebar.slider(
+            'Rango de años',
+            min_value=int(years_regions[0]),
+            max_value=int(years_regions[-1]),
+            value=(int(years_regions[0]), int(years_regions[-1])),
+            step=1,
+            help='Selecciona el rango de años para visualizar en el gráfico'
+        )
+    
     # renderizar contenido según la selección
     if selected_tab == 'Mapa por país':
         st.header("Emisiones de CO₂ por país")
@@ -470,8 +486,11 @@ def main():
     elif selected_tab == 'Evolución por región':
         st.header("Evolución de emisiones por región")
         
+        # filtrar por rango de años del sidebar
+        df_co2_filtered = df_co2[(df_co2['year'] >= year_range[0]) & (df_co2['year'] <= year_range[1])]
+        
         # calcular porcentajes por país
-        df_regions = df_co2.groupby(['year', 'country'], as_index=False).agg({'co2': 'sum'})
+        df_regions = df_co2_filtered.groupby(['year', 'country'], as_index=False).agg({'co2': 'sum'})
         df_regions['total_year'] = df_regions.groupby('year')['co2'].transform('sum')
         df_regions['percentage'] = (df_regions['co2'] / df_regions['total_year']) * 100
         
@@ -532,8 +551,6 @@ def main():
         )
         
         fig_area.update_xaxes(
-            rangeslider_visible=True,
-            rangeslider_thickness=0.05,
             showgrid=False,
             range=[df_pivot.index.min(), df_pivot.index.max()]
         )
