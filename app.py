@@ -182,18 +182,17 @@ def main():
     df_co2 = load_emissions(CSV_PATH)
     df_fossil = load_fossil_emissions(CSV_FOSSIL_PATH)
 
-    # tabs para diferentes visualizaciones
-    tab1, tab2, tab3, tab4 = st.tabs([
-        "Mapa por país", 
-        "Evolución temporal de emisiones globales",
-        "Emisiones por tipo",
-        "Evolución por región"
-    ])
+    # selector de visualización en sidebar
+    st.sidebar.header('Navegación')
+    selected_tab = st.sidebar.radio(
+        'Selecciona una visualización:',
+        ['Mapa por país', 'Evolución temporal', 'Emisiones por tipo', 'Evolución por región'],
+        label_visibility='collapsed'
+    )
     
-    with tab1:
-        st.header("Emisiones de CO₂ por país")
-        
-        # panel lateral de control
+    # mostrar controles según la pestaña seleccionada
+    if selected_tab == 'Mapa por país':
+        st.sidebar.markdown('---')
         st.sidebar.header('controles')
 
         min_year = int(df_co2['year'].min())
@@ -228,6 +227,33 @@ def main():
             años destacados para saltar rápidamente a hitos históricos.
             """
         )
+    
+    elif selected_tab == 'Evolución temporal':
+        # calcular totales por año para los controles
+        df_total_year = (
+            df_co2.groupby('year', as_index=False)
+            .agg({'co2': 'sum'})
+            .rename(columns={'co2': 'co2_total'})
+        )
+        
+        st.sidebar.markdown('---')
+        st.sidebar.header('Controles de rango temporal')
+        
+        min_year_global = int(df_total_year['year'].min())
+        max_year_global = int(df_total_year['year'].max())
+        
+        year_range = st.sidebar.slider(
+            'Rango de años',
+            min_value=min_year_global,
+            max_value=max_year_global,
+            value=(min_year_global, max_year_global),
+            step=1,
+            help='Selecciona el rango de años para visualizar en el gráfico'
+        )
+    
+    # renderizar contenido según la selección
+    if selected_tab == 'Mapa por país':
+        st.header("Emisiones de CO₂ por país")
 
         # generar mapa
         if year < min_year or year > max_year:
@@ -250,7 +276,7 @@ def main():
 
         st.dataframe(df_year, use_container_width=True)
     
-    with tab2:
+    elif selected_tab == 'Evolución temporal':
         st.header("Evolución temporal de emisiones globales")
         
         # calcular totales por año
@@ -260,12 +286,18 @@ def main():
             .rename(columns={'co2': 'co2_total'})
         )
         
+        # filtrar datos según el rango seleccionado
+        df_total_year_filtered = df_total_year[
+            (df_total_year['year'] >= year_range[0]) & 
+            (df_total_year['year'] <= year_range[1])
+        ]
+        
         # crear gráfico de línea
         fig_line = px.line(
-            df_total_year,
+            df_total_year_filtered,
             x='year',
             y='co2_total',
-            title='Evolución de emisiones de CO₂: Global'
+            title=f'Evolución de emisiones de CO₂: Global ({year_range[0]}-{year_range[1]})'
         )
         
         fig_line.update_traces(
@@ -299,9 +331,7 @@ def main():
         
         fig_line.update_xaxes(
             showgrid=False,
-            rangeslider_visible=True,
-            rangeslider_thickness=0.05,
-            range=[df_total_year['year'].min(), df_total_year['year'].max()]
+            range=[df_total_year_filtered['year'].min(), df_total_year_filtered['year'].max()]
         )
         
         fig_line.update_yaxes(
@@ -309,22 +339,22 @@ def main():
             gridcolor='lightgray',
             griddash='dash',
             gridwidth=1,
-            range=[0, df_total_year['co2_total'].max() * 1.05]
+            range=[0, df_total_year_filtered['co2_total'].max() * 1.05]
         )
         
         st.plotly_chart(fig_line, use_container_width=True)
         
         # tabla resumen
         st.markdown('---')
-        st.subheader('tabla de emisiones totales por año')
+        st.subheader(f'tabla de emisiones totales por año ({year_range[0]}-{year_range[1]})')
         
-        df_total_year_display = df_total_year.copy()
+        df_total_year_display = df_total_year_filtered.copy()
         df_total_year_display = df_total_year_display.sort_values('year', ascending=False)
         df_total_year_display.columns = ['Año', 'Emisiones totales de CO₂']
         
         st.dataframe(df_total_year_display, use_container_width=True)
     
-    with tab3:
+    elif selected_tab == 'Emisiones por tipo':
         st.header("Emisiones acumuladas por tipo")
         
         # calcular emisiones por tipo
@@ -466,7 +496,7 @@ def main():
         
         st.dataframe(df_emissions_display, use_container_width=True)
     
-    with tab4:
+    elif selected_tab == 'Evolución por región':
         st.header("Evolución de emisiones por región")
         
         # calcular porcentajes por país
