@@ -250,6 +250,29 @@ def main():
             step=1,
             help='Selecciona el rango de años para visualizar en el gráfico'
         )
+        
+        st.sidebar.markdown('---')
+        st.sidebar.header('Filtro de países')
+        
+        # obtener lista de países disponibles
+        available_countries = sorted(df_co2['country'].unique())
+        
+        # checkbox para activar/desactivar filtro
+        filter_countries = st.sidebar.checkbox(
+            'Filtrar por países específicos',
+            value=False,
+            help='Activa para seleccionar países individuales'
+        )
+        
+        if filter_countries:
+            selected_countries = st.sidebar.multiselect(
+                'Selecciona países',
+                options=available_countries,
+                default=['China', 'United States', 'India', 'Russia', 'Japan'],
+                help='Puedes seleccionar múltiples países'
+            )
+        else:
+            selected_countries = None
     
     elif selected_tab == 'Emisiones por tipo':
         # calcular emisiones por tipo para los controles
@@ -291,6 +314,31 @@ def main():
             step=1,
             help='Selecciona el rango de años para visualizar en el gráfico'
         )
+        
+        st.sidebar.markdown('---')
+        st.sidebar.header('Filtro de países')
+        
+        # obtener lista de países disponibles
+        available_countries_regions = sorted(df_co2['country'].unique())
+        
+        # checkbox para activar/desactivar filtro
+        filter_countries_regions = st.sidebar.checkbox(
+            'Filtrar por países específicos',
+            value=False,
+            help='Activa para seleccionar países individuales en lugar de top 10',
+            key='filter_regions'
+        )
+        
+        if filter_countries_regions:
+            selected_countries_regions = st.sidebar.multiselect(
+                'Selecciona países',
+                options=available_countries_regions,
+                default=['China', 'United States', 'India', 'Russia', 'Japan'],
+                help='Puedes seleccionar múltiples países',
+                key='multiselect_regions'
+            )
+        else:
+            selected_countries_regions = None
     
     # renderizar contenido según la selección
     if selected_tab == 'Mapa por país':
@@ -320,80 +368,152 @@ def main():
     elif selected_tab == 'Evolución temporal':
         st.header("Evolución temporal de emisiones globales")
         
-        # calcular totales por año
-        df_total_year = (
-            df_co2.groupby('year', as_index=False)
-            .agg({'co2': 'sum'})
-            .rename(columns={'co2': 'co2_total'})
-        )
-        
-        # filtrar datos según el rango seleccionado
-        df_total_year_filtered = df_total_year[
-            (df_total_year['year'] >= year_range[0]) & 
-            (df_total_year['year'] <= year_range[1])
-        ]
-        
-        # crear gráfico de línea
-        fig_line = px.line(
-            df_total_year_filtered,
-            x='year',
-            y='co2_total',
-            title=f'Evolución de emisiones de CO₂: Global ({year_range[0]}-{year_range[1]})'
-        )
-        
-        fig_line.update_traces(
-            mode='lines+markers',
-            line_color='#3498DB',
-            line_width=2,
-            marker=dict(
-                size=4,
-                color='#3498DB',
-                symbol='circle'
-            ),
-            hovertemplate='<b>Año:</b> %{x}<br><b>CO₂:</b> %{y:,.0f} toneladas<extra></extra>'
-        )
-        
-        fig_line.update_layout(
-            title_x=0.5,
-            xaxis_title='Año',
-            yaxis_title='Emisiones totales de CO₂ (toneladas)',
-            hovermode='x unified',
-            font=dict(
-                family='"Lato", "Arial", sans-serif',
-                size=12,
-                color='#333'
-            ),
-            title_font=dict(
-                size=16,
-                family='"Lato", "Arial", sans-serif'
-            ),
-            plot_bgcolor='#f8f9fa'
-        )
-        
-        fig_line.update_xaxes(
-            showgrid=False,
-            range=[df_total_year_filtered['year'].min(), df_total_year_filtered['year'].max()]
-        )
-        
-        fig_line.update_yaxes(
-            showgrid=True,
-            gridcolor='lightgray',
-            griddash='dash',
-            gridwidth=1,
-            range=[0, df_total_year_filtered['co2_total'].max() * 1.05]
-        )
-        
-        st.plotly_chart(fig_line, use_container_width=True)
-        
-        # tabla resumen
-        st.markdown('---')
-        st.subheader(f'tabla de emisiones totales por año ({year_range[0]}-{year_range[1]})')
-        
-        df_total_year_display = df_total_year_filtered.copy()
-        df_total_year_display = df_total_year_display.sort_values('year', ascending=False)
-        df_total_year_display.columns = ['Año', 'Emisiones totales de CO₂']
-        
-        st.dataframe(df_total_year_display, use_container_width=True)
+        if selected_countries and len(selected_countries) > 0:
+            # modo: países seleccionados
+            df_filtered = df_co2[df_co2['country'].isin(selected_countries)]
+            df_filtered = df_filtered[
+                (df_filtered['year'] >= year_range[0]) & 
+                (df_filtered['year'] <= year_range[1])
+            ]
+            
+            # agrupar por año y país
+            df_by_country = df_filtered.groupby(['year', 'country'], as_index=False).agg({'co2': 'sum'})
+            
+            # crear gráfico de líneas múltiples
+            fig_line = px.line(
+                df_by_country,
+                x='year',
+                y='co2',
+                color='country',
+                title=f'Evolución de emisiones de CO₂ por país ({year_range[0]}-{year_range[1]})'
+            )
+            
+            fig_line.update_traces(
+                mode='lines+markers',
+                line_width=2,
+                marker=dict(size=4)
+            )
+            
+            fig_line.update_layout(
+                title_x=0.5,
+                xaxis_title='Año',
+                yaxis_title='Emisiones de CO₂ (toneladas)',
+                hovermode='x unified',
+                font=dict(
+                    family='"Lato", "Arial", sans-serif',
+                    size=12,
+                    color='#333'
+                ),
+                title_font=dict(
+                    size=16,
+                    family='"Lato", "Arial", sans-serif'
+                ),
+                plot_bgcolor='#f8f9fa',
+                legend=dict(
+                    title='País',
+                    orientation='v',
+                    yanchor='top',
+                    y=1,
+                    xanchor='left',
+                    x=1.02
+                )
+            )
+            
+            fig_line.update_xaxes(showgrid=False)
+            fig_line.update_yaxes(
+                showgrid=True,
+                gridcolor='lightgray',
+                griddash='dash',
+                gridwidth=1
+            )
+            
+            st.plotly_chart(fig_line, use_container_width=True)
+            
+            # tabla con datos por país
+            st.markdown('---')
+            st.subheader(f'Tabla de emisiones por país y año ({year_range[0]}-{year_range[1]})')
+            
+            df_display = df_by_country.copy()
+            df_display = df_display.sort_values(['year', 'co2'], ascending=[False, False])
+            df_display.columns = ['Año', 'País', 'Emisiones de CO₂']
+            
+            st.dataframe(df_display, use_container_width=True)
+            
+        else:
+            # modo: global (todos los países agregados)
+            df_total_year = (
+                df_co2.groupby('year', as_index=False)
+                .agg({'co2': 'sum'})
+                .rename(columns={'co2': 'co2_total'})
+            )
+            
+            # filtrar datos según el rango seleccionado
+            df_total_year_filtered = df_total_year[
+                (df_total_year['year'] >= year_range[0]) & 
+                (df_total_year['year'] <= year_range[1])
+            ]
+            
+            # crear gráfico de línea
+            fig_line = px.line(
+                df_total_year_filtered,
+                x='year',
+                y='co2_total',
+                title=f'Evolución de emisiones de CO₂: Global ({year_range[0]}-{year_range[1]})'
+            )
+            
+            fig_line.update_traces(
+                mode='lines+markers',
+                line_color='#3498DB',
+                line_width=2,
+                marker=dict(
+                    size=4,
+                    color='#3498DB',
+                    symbol='circle'
+                ),
+                hovertemplate='<b>Año:</b> %{x}<br><b>CO₂:</b> %{y:,.0f} toneladas<extra></extra>'
+            )
+            
+            fig_line.update_layout(
+                title_x=0.5,
+                xaxis_title='Año',
+                yaxis_title='Emisiones totales de CO₂ (toneladas)',
+                hovermode='x unified',
+                font=dict(
+                    family='"Lato", "Arial", sans-serif',
+                    size=12,
+                    color='#333'
+                ),
+                title_font=dict(
+                    size=16,
+                    family='"Lato", "Arial", sans-serif'
+                ),
+                plot_bgcolor='#f8f9fa'
+            )
+            
+            fig_line.update_xaxes(
+                showgrid=False,
+                range=[df_total_year_filtered['year'].min(), df_total_year_filtered['year'].max()]
+            )
+            
+            fig_line.update_yaxes(
+                showgrid=True,
+                gridcolor='lightgray',
+                griddash='dash',
+                gridwidth=1,
+                range=[0, df_total_year_filtered['co2_total'].max() * 1.05]
+            )
+            
+            st.plotly_chart(fig_line, use_container_width=True)
+            
+            # tabla resumen
+            st.markdown('---')
+            st.subheader(f'tabla de emisiones totales por año ({year_range[0]}-{year_range[1]})')
+            
+            df_total_year_display = df_total_year_filtered.copy()
+            df_total_year_display = df_total_year_display.sort_values('year', ascending=False)
+            df_total_year_display.columns = ['Año', 'Emisiones totales de CO₂']
+            
+            st.dataframe(df_total_year_display, use_container_width=True)
     
     elif selected_tab == 'Emisiones por tipo':
         st.header("Emisiones acumuladas por tipo")
@@ -494,9 +614,17 @@ def main():
         df_regions['total_year'] = df_regions.groupby('year')['co2'].transform('sum')
         df_regions['percentage'] = (df_regions['co2'] / df_regions['total_year']) * 100
         
-        # top 10 países
-        top_countries = df_regions.groupby('country')['co2'].sum().nlargest(10).index
-        df_top = df_regions[df_regions['country'].isin(top_countries)]
+        # determinar qué países usar
+        if selected_countries_regions and len(selected_countries_regions) > 0:
+            # usar países seleccionados
+            countries_to_plot = selected_countries_regions
+            df_top = df_regions[df_regions['country'].isin(countries_to_plot)]
+            title_suffix = f'(países seleccionados: {len(countries_to_plot)})'
+        else:
+            # usar top 10
+            top_countries = df_regions.groupby('country')['co2'].sum().nlargest(10).index
+            df_top = df_regions[df_regions['country'].isin(top_countries)]
+            title_suffix = '(top 10 países)'
         
         df_pivot = df_top.pivot_table(
             index='year',
@@ -521,7 +649,7 @@ def main():
             ))
         
         fig_area.update_layout(
-            title='Evolución de emisiones de CO₂ por región (% del total)',
+            title=f'Evolución de emisiones de CO₂ por región {title_suffix}',
             title_x=0.5,
             xaxis_title='Año',
             yaxis_title='Porcentaje de emisiones globales',
@@ -567,7 +695,10 @@ def main():
         
         # tabla resumen
         st.markdown('---')
-        st.subheader('tabla de emisiones por país (top 10) - todos los años')
+        if selected_countries_regions and len(selected_countries_regions) > 0:
+            st.subheader(f'Tabla de emisiones por país (países seleccionados)')
+        else:
+            st.subheader('Tabla de emisiones por país (top 10)')
         
         # filtrar top 10 y ordenar
         df_regions_table = df_top.copy()
