@@ -178,9 +178,10 @@ def main():
     )
 
     # cargar datos
-    world_master, geojson_world = load_world(SHP_PATH)
-    df_co2 = load_emissions(CSV_PATH)
-    df_fossil = load_fossil_emissions(CSV_FOSSIL_PATH)
+    with st.spinner('Cargando datos geoespaciales y de emisiones...'):
+        world_master, geojson_world = load_world(SHP_PATH)
+        df_co2 = load_emissions(CSV_PATH)
+        df_fossil = load_fossil_emissions(CSV_FOSSIL_PATH)
 
     # selector de visualización en sidebar
     st.sidebar.header('Navegación')
@@ -349,8 +350,9 @@ def main():
             st.warning(f'no hay datos para el año {year}. el rango válido es {min_year}–{max_year}.')
             return
 
-        fig = make_co2_map(df_co2, world_master, geojson_world, year)
-        st.plotly_chart(fig, use_container_width=True)
+        with st.spinner(f'Generando mapa para el año {year}...'):
+            fig = make_co2_map(df_co2, world_master, geojson_world, year)
+            st.plotly_chart(fig, use_container_width=True)
 
         # tabla resumen opcional
         st.markdown('---')
@@ -379,24 +381,25 @@ def main():
         st.header("Evolución temporal de emisiones globales")
         
         if selected_countries and len(selected_countries) > 0:
-            # modo: países seleccionados
-            df_filtered = df_co2[df_co2['country'].isin(selected_countries)]
-            df_filtered = df_filtered[
-                (df_filtered['year'] >= year_range[0]) & 
-                (df_filtered['year'] <= year_range[1])
-            ]
-            
-            # agrupar por año y país
-            df_by_country = df_filtered.groupby(['year', 'country'], as_index=False).agg({'co2': 'sum'})
-            
-            # crear gráfico de líneas múltiples
-            fig_line = px.line(
-                df_by_country,
-                x='year',
-                y='co2',
-                color='country',
-                title=f'Evolución de emisiones de CO₂ por país ({year_range[0]}-{year_range[1]})'
-            )
+            with st.spinner('Procesando datos de países seleccionados...'):
+                # modo: países seleccionados
+                df_filtered = df_co2[df_co2['country'].isin(selected_countries)]
+                df_filtered = df_filtered[
+                    (df_filtered['year'] >= year_range[0]) & 
+                    (df_filtered['year'] <= year_range[1])
+                ]
+                
+                # agrupar por año y país
+                df_by_country = df_filtered.groupby(['year', 'country'], as_index=False).agg({'co2': 'sum'})
+                
+                # crear gráfico de líneas múltiples
+                fig_line = px.line(
+                    df_by_country,
+                    x='year',
+                    y='co2',
+                    color='country',
+                    title=f'Evolución de emisiones de CO₂ por país ({year_range[0]}-{year_range[1]})'
+                )
             
             fig_line.update_traces(
                 mode='lines+markers',
@@ -456,22 +459,23 @@ def main():
             )
             
         else:
-            # modo: global (todos los países agregados)
-            df_total_year = (
-                df_co2.groupby('year', as_index=False)
-                .agg({'co2': 'sum'})
-                .rename(columns={'co2': 'co2_total'})
-            )
-            
-            # filtrar datos según el rango seleccionado
-            df_total_year_filtered = df_total_year[
-                (df_total_year['year'] >= year_range[0]) & 
-                (df_total_year['year'] <= year_range[1])
-            ]
-            
-            # crear gráfico de línea
-            fig_line = px.line(
-                df_total_year_filtered,
+            with st.spinner('Calculando emisiones globales...'):
+                # modo: global (todos los países agregados)
+                df_total_year = (
+                    df_co2.groupby('year', as_index=False)
+                    .agg({'co2': 'sum'})
+                    .rename(columns={'co2': 'co2_total'})
+                )
+                
+                # filtrar datos según el rango seleccionado
+                df_total_year_filtered = df_total_year[
+                    (df_total_year['year'] >= year_range[0]) & 
+                    (df_total_year['year'] <= year_range[1])
+                ]
+                
+                # crear gráfico de línea
+                fig_line = px.line(
+                    df_total_year_filtered,
                 x='year',
                 y='co2_total',
                 title=f'Evolución de emisiones de CO₂: Global ({year_range[0]}-{year_range[1]})'
@@ -540,15 +544,16 @@ def main():
     elif selected_tab == 'Emisiones por tipo':
         st.header("Emisiones acumuladas por tipo")
         
-        # calcular emisiones por tipo
-        df_emissions = (
-            df_fossil.groupby('year', as_index=False)
-            .agg({
-                'total': 'sum',
-                'land_use_change': 'sum',
-                'fossil_fuels': 'sum'
-            })
-        )
+        with st.spinner('Calculando emisiones por tipo...'):
+            # calcular emisiones por tipo
+            df_emissions = (
+                df_fossil.groupby('year', as_index=False)
+                .agg({
+                    'total': 'sum',
+                    'land_use_change': 'sum',
+                    'fossil_fuels': 'sum'
+                })
+            )
         
         # usar el año seleccionado del sidebar
         df_filtered = df_emissions[df_emissions['year'] <= year_selected]
@@ -636,25 +641,26 @@ def main():
     elif selected_tab == 'Evolución por región':
         st.header("Evolución de emisiones por región")
         
-        # filtrar por rango de años del sidebar
-        df_co2_filtered = df_co2[(df_co2['year'] >= year_range[0]) & (df_co2['year'] <= year_range[1])]
-        
-        # calcular porcentajes por país
-        df_regions = df_co2_filtered.groupby(['year', 'country'], as_index=False).agg({'co2': 'sum'})
-        df_regions['total_year'] = df_regions.groupby('year')['co2'].transform('sum')
-        df_regions['percentage'] = (df_regions['co2'] / df_regions['total_year']) * 100
-        
-        # determinar qué países usar
-        if selected_countries_regions and len(selected_countries_regions) > 0:
-            # usar países seleccionados
-            countries_to_plot = selected_countries_regions
-            df_top = df_regions[df_regions['country'].isin(countries_to_plot)]
-            title_suffix = f'(países seleccionados: {len(countries_to_plot)})'
-        else:
-            # usar top 10
-            top_countries = df_regions.groupby('country')['co2'].sum().nlargest(10).index
-            df_top = df_regions[df_regions['country'].isin(top_countries)]
-            title_suffix = '(top 10 países)'
+        with st.spinner('Procesando datos regionales...'):
+            # filtrar por rango de años del sidebar
+            df_co2_filtered = df_co2[(df_co2['year'] >= year_range[0]) & (df_co2['year'] <= year_range[1])]
+            
+            # calcular porcentajes por país
+            df_regions = df_co2_filtered.groupby(['year', 'country'], as_index=False).agg({'co2': 'sum'})
+            df_regions['total_year'] = df_regions.groupby('year')['co2'].transform('sum')
+            df_regions['percentage'] = (df_regions['co2'] / df_regions['total_year']) * 100
+            
+            # determinar qué países usar
+            if selected_countries_regions and len(selected_countries_regions) > 0:
+                # usar países seleccionados
+                countries_to_plot = selected_countries_regions
+                df_top = df_regions[df_regions['country'].isin(countries_to_plot)]
+                title_suffix = f'(países seleccionados: {len(countries_to_plot)})'
+            else:
+                # usar top 10
+                top_countries = df_regions.groupby('country')['co2'].sum().nlargest(10).index
+                df_top = df_regions[df_regions['country'].isin(top_countries)]
+                title_suffix = '(top 10 países)'
         
         df_pivot = df_top.pivot_table(
             index='year',
