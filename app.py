@@ -251,6 +251,31 @@ def main():
             help='Selecciona el rango de años para visualizar en el gráfico'
         )
     
+    elif selected_tab == 'Emisiones por tipo':
+        # calcular emisiones por tipo para los controles
+        df_emissions_ctrl = (
+            df_fossil.groupby('year', as_index=False)
+            .agg({
+                'total': 'sum',
+                'land_use_change': 'sum',
+                'fossil_fuels': 'sum'
+            })
+        )
+        
+        years_ctrl = sorted(df_emissions_ctrl['year'].unique())
+        
+        st.sidebar.markdown('---')
+        st.sidebar.header('Controles de año')
+        
+        year_selected = st.sidebar.slider(
+            'Acumular hasta año',
+            min_value=int(years_ctrl[0]),
+            max_value=int(years_ctrl[-1]),
+            value=2024 if 2024 in years_ctrl else int(years_ctrl[-1]),
+            step=1,
+            help='Selecciona hasta qué año se acumulan las emisiones'
+        )
+    
     # renderizar contenido según la selección
     if selected_tab == 'Mapa por país':
         st.header("Emisiones de CO₂ por país")
@@ -367,97 +392,43 @@ def main():
             })
         )
         
-        years = sorted(df_emissions['year'].unique())
-        year_initial = 2024 if 2024 in years else years[-1]
+        # usar el año seleccionado del sidebar
+        df_filtered = df_emissions[df_emissions['year'] <= year_selected]
         
-        df_initial = df_emissions[df_emissions['year'] <= year_initial]
-        
-        totals_initial = {
-            'Total (fossil fuels and land-use change)': df_initial['total'].sum(),
-            'Fossil fuels': df_initial['fossil_fuels'].sum(),
-            'Land-use change': df_initial['land_use_change'].sum()
+        totals_filtered = {
+            'Total (fossil fuels and land-use change)': df_filtered['total'].sum(),
+            'Fossil fuels': df_filtered['fossil_fuels'].sum(),
+            'Land-use change': df_filtered['land_use_change'].sum()
         }
-        df_plot_initial = pd.DataFrame(list(totals_initial.items()), columns=['tipo', 'emisiones'])
-        df_plot_initial = df_plot_initial.sort_values('emisiones', ascending=True)
+        df_plot_filtered = pd.DataFrame(list(totals_filtered.items()), columns=['tipo', 'emisiones'])
+        df_plot_filtered = df_plot_filtered.sort_values('emisiones', ascending=True)
         
+        # asignar colores según el tipo
+        colors = []
+        for tipo in df_plot_filtered['tipo']:
+            if 'Total' in tipo:
+                colors.append('#E74C3C')
+            elif 'Fossil' in tipo:
+                colors.append('#3498DB')
+            else:
+                colors.append('#2ECC71')
+        
+        # crear gráfico sin animación
         fig_bar = go.Figure(
             data=[go.Bar(
-                y=df_plot_initial['tipo'],
-                x=df_plot_initial['emisiones'],
+                y=df_plot_filtered['tipo'],
+                x=df_plot_filtered['emisiones'],
                 orientation='h',
-                marker=dict(color=['#E74C3C', '#3498DB', '#2ECC71'])
+                marker=dict(color=colors)
             )]
         )
         
-        frames = []
-        for year_frame in years:
-            df_range = df_emissions[df_emissions['year'] <= year_frame]
-            
-            totals = {
-                'Total (fossil fuels and land-use change)': df_range['total'].sum(),
-                'Fossil fuels': df_range['fossil_fuels'].sum(),
-                'Land-use change': df_range['land_use_change'].sum()
-            }
-            
-            df_plot = pd.DataFrame(list(totals.items()), columns=['tipo', 'emisiones'])
-            df_plot = df_plot.sort_values('emisiones', ascending=True)
-            
-            colors = []
-            for tipo in df_plot['tipo']:
-                if 'Total' in tipo:
-                    colors.append('#E74C3C')
-                elif 'Fossil' in tipo:
-                    colors.append('#3498DB')
-                else:
-                    colors.append('#2ECC71')
-            
-            frames.append(go.Frame(
-                data=[go.Bar(
-                    y=df_plot['tipo'],
-                    x=df_plot['emisiones'],
-                    orientation='h',
-                    marker=dict(color=colors)
-                )],
-                name=str(year_frame)
-            ))
-        
-        fig_bar.frames = frames
-        
-        active_index = years.index(year_initial)
-        
-        steps = []
-        for i, year_step in enumerate(years):
-            steps.append({
-                'args': [
-                    [str(year_step)],
-                    {
-                        'frame': {'duration': 300, 'redraw': True},
-                        'mode': 'immediate',
-                        'transition': {'duration': 300}
-                    }
-                ],
-                'label': str(year_step),
-                'method': 'animate'
-            })
-        
         fig_bar.update_layout(
-            title='Emisiones acumuladas de CO₂ por tipo',
+            title=f'Emisiones acumuladas de CO₂ por tipo (hasta {year_selected})',
             title_x=0.5,
             showlegend=False,
             xaxis_title='Emisiones totales (toneladas)',
             yaxis_title='Tipo de emisión',
-            sliders=[{
-                'active': active_index,
-                'yanchor': 'top',
-                'y': 0,
-                'xanchor': 'left',
-                'currentvalue': {
-                    'prefix': 'Hasta año: ',
-                    'visible': True,
-                    'xanchor': 'right'
-                },
-                'steps': steps
-            }],
             height=600,
             font=dict(
                 family='"Lato", "Arial", sans-serif',
