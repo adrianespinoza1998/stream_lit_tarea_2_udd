@@ -185,21 +185,17 @@ Este proyecto fue desarrollado en equipo por estudiantes de la Universidad del D
 
 ### Equipo de desarrollo:
 
-**Adrián Espinoza** - Líder de Proyecto
+**Adrián Espinoza**
 - GitHub: [@adrianespinoza1998](https://github.com/adrianespinoza1998)
-- Rol: Arquitectura de la aplicación, integración de visualizaciones, documentación técnica
 
-**Rodrigo Castro** - Desarrollador Backend
+**Rodrigo Castro**
 - GitHub: [@Rcastrovera](https://github.com/Rcastrovera)
-- Rol: Procesamiento de datos geoespaciales, optimización de queries, implementación de cache
 
-**Sebastián González** - Desarrollador Frontend
+**Sebastián González**
 - GitHub: [@segovis-dot](https://github.com/segovis-dot)
-- Rol: Diseño de interfaz, controles interactivos, experiencia de usuario
 
-**Vanessa Camaggi** - Analista de Datos
+**Vanessa Camaggi**
 - GitHub: [@vanessacamaggi-ui](https://github.com/vanessacamaggi-ui)
-- Rol: Análisis de datos, validación de cálculos, documentación de fuentes
 
 ### Contribuciones:
 
