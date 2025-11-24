@@ -441,8 +441,18 @@ def main():
             plot_bgcolor='#f8f9fa'
         )
         
-        fig_bar.update_xaxes(showgrid=True)
-        fig_bar.update_yaxes(showgrid=False)
+        fig_bar.update_xaxes(
+            showgrid=True,
+            gridcolor='lightgray',
+            griddash='dash',
+            gridwidth=1,
+            showline=False,
+            zeroline=False
+        )
+        fig_bar.update_yaxes(
+            showgrid=False,
+            showline=False
+        )
         
         st.plotly_chart(fig_bar, use_container_width=True)
         
