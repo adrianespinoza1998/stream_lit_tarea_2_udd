@@ -186,7 +186,7 @@ def main():
     st.sidebar.header('Navegación')
     selected_tab = st.sidebar.radio(
         'Selecciona una visualización:',
-        ['Mapa por país', 'Evolución temporal', 'Emisiones por tipo', 'Evolución por región'],
+        ['Mapa por país', 'Evolución temporal', 'Emisiones por tipo', 'Evolución por región', 'Documentación'],
         label_visibility='collapsed'
     )
     
@@ -709,6 +709,161 @@ def main():
         df_regions_table['Porcentaje del total (%)'] = df_regions_table['Porcentaje del total (%)'].round(2)
         
         st.dataframe(df_regions_table, use_container_width=True)
+    
+    elif selected_tab == 'Documentación':
+        st.header("📚 Documentación")
+        
+        # Introducción
+        st.markdown("""
+        Esta aplicación interactiva permite explorar y analizar las emisiones de CO₂ a nivel global 
+        a través de múltiples visualizaciones y periodos temporales.
+        """)
+        
+        # Datasets
+        st.markdown("---")
+        st.subheader("📊 Datasets utilizados")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("""
+            **1. Annual CO₂ emissions per country**
+            - **Fuente**: [Our World in Data](https://ourworldindata.org/co2-emissions)
+            - **Periodo**: 1750 - 2024
+            - **Unidad**: Toneladas de CO₂
+            - **Cobertura**: ~200 países y territorios
+            - **Variables**: País, código ISO3, año, emisiones totales
+            """)
+        
+        with col2:
+            st.markdown("""
+            **2. CO₂ emissions from fossil fuels and land-use change**
+            - **Fuente**: [Our World in Data](https://ourworldindata.org/co2-emissions)
+            - **Periodo**: 1750 - 2024
+            - **Unidad**: Toneladas de CO₂
+            - **Variables**: Emisiones totales, combustibles fósiles, cambio de uso de suelo
+            """)
+        
+        # Visualizaciones OWID
+        st.markdown("---")
+        st.subheader("🎨 Visualizaciones inspiradas en Our World in Data")
+        
+        st.markdown("""
+        Esta aplicación recrea y adapta 4 visualizaciones clave de OWID:
+        
+        1. **Mapa coroplético por país**
+           - Original: [Annual CO₂ emissions by region](https://ourworldindata.org/grapher/annual-co2-emissions-per-country)
+           - Adaptación: Mapa interactivo con selector de año y países sin datos en gris
+           
+        2. **Evolución temporal**
+           - Original: [Annual total CO₂ emissions](https://ourworldindata.org/grapher/annual-co2-emissions-per-country?country=~OWID_WRL)
+           - Adaptación: Gráfico de línea con rangeslider y opción de filtrado por países
+           
+        3. **Emisiones por tipo**
+           - Original: [Annual CO₂ emissions by source](https://ourworldindata.org/grapher/co2-fossil-plus-land-use)
+           - Adaptación: Barras horizontales acumuladas con control de año mediante slider
+           
+        4. **Evolución por región**
+           - Original: [Share of global CO₂ emissions](https://ourworldindata.org/grapher/annual-co-emissions-by-region)
+           - Adaptación: Área apilada normalizada al 100% con selector de países
+        """)
+        
+        # Decisiones de diseño
+        st.markdown("---")
+        st.subheader("🎯 Decisiones de diseño")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("""
+            **1. Paleta de colores**
+            - **Azul (#3498DB)**: Emisiones globales (neutralidad)
+            - **Rojo (#E74C3C)**: Emisiones totales (alerta)
+            - **Verde (#2ECC71)**: Cambio uso de suelo (naturaleza)
+            - **Escala Reds**: Mapa coroplético (intensidad creciente)
+            
+            **Justificación**: Colores intuitivos que facilitan la interpretación 
+            inmediata del tipo de dato y su gravedad.
+            """)
+        
+        with col2:
+            st.markdown("""
+            **2. Escalas y ejes**
+            - **Escala lineal**: Para emisiones absolutas (toneladas)
+            - **Normalización al 100%**: Para comparación de participación regional
+            - **Grillas sutiles**: Líneas grises discontinuas para referencia sin saturar
+            
+            **Justificación**: Facilita comparaciones cuantitativas precisas y 
+            visualización de proporciones sin distorsión.
+            """)
+        
+        # Limitaciones
+        st.markdown("---")
+        st.subheader("⚠️ Limitaciones y consideraciones")
+        
+        st.warning("""
+        **Países sin datos**
+        - Algunos países no tienen datos para todos los años, especialmente antes de 1900
+        - Los países sin datos se muestran en gris en el mapa
+        
+        **Agregaciones**
+        - Los totales globales pueden incluir estimaciones para países sin datos completos
+        - Las sumas por tipo de emisión pueden no coincidir exactamente debido a redondeos
+        
+        **Periodicidad**
+        - Los datos más recientes (2023-2024) pueden estar sujetos a revisiones
+        - Algunos países reportan con retraso, afectando la completitud de años recientes
+        """)
+        
+        # Metodología
+        st.markdown("---")
+        st.subheader("🔬 Metodología técnica")
+        
+        st.markdown("""
+        **Herramientas utilizadas:**
+        - **Streamlit**: Framework web interactivo
+        - **Plotly**: Visualizaciones interactivas
+        - **GeoPandas**: Procesamiento de datos geoespaciales
+        - **Pandas**: Manipulación y análisis de datos
+        
+        **Procesamiento de datos:**
+        1. Carga de shapefiles Natural Earth (50m resolution)
+        2. Estandarización de códigos ISO3 para unión de datos
+        3. Agregación temporal y espacial según visualización
+        4. Cálculo de porcentajes y normalizaciones
+        
+        **Optimizaciones:**
+        - Cache de datos con `@st.cache_data`
+        - Filtrado dinámico según controles del usuario
+        - Renderizado condicional de visualizaciones
+        """)
+        
+        # Fuentes y referencias
+        st.markdown("---")
+        st.subheader("📖 Fuentes y referencias")
+        
+        st.markdown("""
+        - [Our World in Data - CO₂ and Greenhouse Gas Emissions](https://ourworldindata.org/co2-emissions)
+        - [Natural Earth - Country Boundaries](https://www.naturalearthdata.com/)
+        - [Global Carbon Project](https://www.globalcarbonproject.org/)
+        - [Plotly Documentation](https://plotly.com/python/)
+        - [Streamlit Documentation](https://docs.streamlit.io/)
+        """)
+        
+        # Uso de IA
+        st.markdown("---")
+        st.info("""
+        **📝 Declaración de uso de IA**
+        
+        Esta aplicación fue desarrollada con asistencia de GitHub Copilot para:
+        - Generación de código base de Streamlit y Plotly
+        - Optimización de queries de pandas y geopandas
+        - Estructuración de layout y componentes interactivos
+        - Documentación y comentarios en código
+        
+        Todo el código fue revisado, adaptado y probado manualmente para asegurar 
+        su correcta funcionalidad y alineación con los requisitos del proyecto.
+        """)
 
 
 if __name__ == '__main__':
