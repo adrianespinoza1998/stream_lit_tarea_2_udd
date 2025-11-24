@@ -1,6 +1,6 @@
 # Visualización Interactiva de Emisiones de CO₂
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://your-app-url.streamlit.app)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://adrianespinoza1998-stream-lit-tutorial-udd-app-4rhgmk.streamlit.app/)
 
 ## 📋 Descripción
 
