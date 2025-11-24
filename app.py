@@ -362,8 +362,18 @@ def main():
             .agg({'co2': 'sum'})
             .sort_values('co2', ascending=False)
         )
+        
+        # agregar ranking
+        df_year.insert(0, 'Ranking', range(1, len(df_year) + 1))
+        df_year.columns = ['Ranking', 'País', 'Código ISO3', 'Emisiones de CO₂ (toneladas)']
 
-        st.dataframe(df_year, use_container_width=True)
+        st.dataframe(
+            df_year.style.format({
+                'Emisiones de CO₂ (toneladas)': '{:,.0f}'
+            }),
+            use_container_width=True,
+            height=400
+        )
     
     elif selected_tab == 'Evolución temporal':
         st.header("Evolución temporal de emisiones globales")
@@ -435,9 +445,15 @@ def main():
             
             df_display = df_by_country.copy()
             df_display = df_display.sort_values(['year', 'co2'], ascending=[False, False])
-            df_display.columns = ['Año', 'País', 'Emisiones de CO₂']
+            df_display.columns = ['Año', 'País', 'Emisiones de CO₂ (toneladas)']
             
-            st.dataframe(df_display, use_container_width=True)
+            st.dataframe(
+                df_display.style.format({
+                    'Emisiones de CO₂ (toneladas)': '{:,.0f}'
+                }),
+                use_container_width=True,
+                height=400
+            )
             
         else:
             # modo: global (todos los países agregados)
@@ -511,9 +527,15 @@ def main():
             
             df_total_year_display = df_total_year_filtered.copy()
             df_total_year_display = df_total_year_display.sort_values('year', ascending=False)
-            df_total_year_display.columns = ['Año', 'Emisiones totales de CO₂']
+            df_total_year_display.columns = ['Año', 'Emisiones totales de CO₂ (toneladas)']
             
-            st.dataframe(df_total_year_display, use_container_width=True)
+            st.dataframe(
+                df_total_year_display.style.format({
+                    'Emisiones totales de CO₂ (toneladas)': '{:,.0f}'
+                }),
+                use_container_width=True,
+                height=400
+            )
     
     elif selected_tab == 'Emisiones por tipo':
         st.header("Emisiones acumuladas por tipo")
@@ -599,9 +621,17 @@ def main():
         
         df_emissions_display = df_emissions.copy()
         df_emissions_display = df_emissions_display.sort_values('year', ascending=False)
-        df_emissions_display.columns = ['Año', 'Total (fósiles + uso suelo)', 'Cambio uso suelo', 'Combustibles fósiles']
+        df_emissions_display.columns = ['Año', 'Total (toneladas)', 'Cambio uso suelo (toneladas)', 'Combustibles fósiles (toneladas)']
         
-        st.dataframe(df_emissions_display, use_container_width=True)
+        st.dataframe(
+            df_emissions_display.style.format({
+                'Total (toneladas)': '{:,.0f}',
+                'Cambio uso suelo (toneladas)': '{:,.0f}',
+                'Combustibles fósiles (toneladas)': '{:,.0f}'
+            }),
+            use_container_width=True,
+            height=400
+        )
     
     elif selected_tab == 'Evolución por región':
         st.header("Evolución de emisiones por región")
@@ -705,10 +735,16 @@ def main():
         df_regions_table = df_regions_table.sort_values(['year', 'co2'], ascending=[False, False])
         
         df_regions_table = df_regions_table[['year', 'country', 'co2', 'percentage']].copy()
-        df_regions_table.columns = ['Año', 'País', 'Emisiones de CO₂', 'Porcentaje del total (%)']
-        df_regions_table['Porcentaje del total (%)'] = df_regions_table['Porcentaje del total (%)'].round(2)
+        df_regions_table.columns = ['Año', 'País', 'Emisiones de CO₂ (toneladas)', 'Porcentaje del total (%)']
         
-        st.dataframe(df_regions_table, use_container_width=True)
+        st.dataframe(
+            df_regions_table.style.format({
+                'Emisiones de CO₂ (toneladas)': '{:,.0f}',
+                'Porcentaje del total (%)': '{:.2f}%'
+            }),
+            use_container_width=True,
+            height=400
+        )
     
     elif selected_tab == 'Documentación':
         st.header("📚 Documentación")
