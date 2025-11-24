@@ -185,7 +185,7 @@ def main():
     # tabs para diferentes visualizaciones
     tab1, tab2, tab3, tab4 = st.tabs([
         "Mapa por país", 
-        "Gráfico de línea temporal",
+        "Evolución temporal de emisiones globales",
         "Emisiones por tipo",
         "Evolución por región"
     ])
@@ -313,6 +313,16 @@ def main():
         )
         
         st.plotly_chart(fig_line, use_container_width=True)
+        
+        # tabla resumen
+        st.markdown('---')
+        st.subheader('tabla de emisiones totales por año')
+        
+        df_total_year_display = df_total_year.copy()
+        df_total_year_display = df_total_year_display.sort_values('year', ascending=False)
+        df_total_year_display.columns = ['Año', 'Emisiones totales de CO₂']
+        
+        st.dataframe(df_total_year_display, use_container_width=True)
     
     with tab3:
         st.header("Emisiones acumuladas por tipo")
@@ -435,6 +445,16 @@ def main():
         fig_bar.update_yaxes(showgrid=False)
         
         st.plotly_chart(fig_bar, use_container_width=True)
+        
+        # tabla resumen
+        st.markdown('---')
+        st.subheader('tabla de emisiones por tipo y año')
+        
+        df_emissions_display = df_emissions.copy()
+        df_emissions_display = df_emissions_display.sort_values('year', ascending=False)
+        df_emissions_display.columns = ['Año', 'Total (fósiles + uso suelo)', 'Cambio uso suelo', 'Combustibles fósiles']
+        
+        st.dataframe(df_emissions_display, use_container_width=True)
     
     with tab4:
         st.header("Evolución de emisiones por región")
@@ -516,6 +536,20 @@ def main():
         )
         
         st.plotly_chart(fig_area, use_container_width=True)
+        
+        # tabla resumen
+        st.markdown('---')
+        st.subheader('tabla de emisiones por país (top 10) - todos los años')
+        
+        # filtrar top 10 y ordenar
+        df_regions_table = df_top.copy()
+        df_regions_table = df_regions_table.sort_values(['year', 'co2'], ascending=[False, False])
+        
+        df_regions_table = df_regions_table[['year', 'country', 'co2', 'percentage']].copy()
+        df_regions_table.columns = ['Año', 'País', 'Emisiones de CO₂', 'Porcentaje del total (%)']
+        df_regions_table['Porcentaje del total (%)'] = df_regions_table['Porcentaje del total (%)'].round(2)
+        
+        st.dataframe(df_regions_table, use_container_width=True)
 
 
 if __name__ == '__main__':
